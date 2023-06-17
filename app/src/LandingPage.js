@@ -21,11 +21,12 @@ export default function LandingPage() {
     });
 
     socket.on('allow', (roomID) => {
-        socket.credentials.roomID = roomID;
+        socket.auth.roomID = roomID;
         navigate(`/${roomID}`);
     });
 
     let connectAndAskRoom = (type, roomID) => {
+        console.log(socket.auth);
         socket.connect();
         socket.emit(type, roomID);
     } 
@@ -41,7 +42,7 @@ export default function LandingPage() {
         } else if (roomID === "") {
             message.warning("Please enter a valid room ID");
         } else {
-            socket.credentials = { username };
+            socket.auth = { username: username, roomID: "" };
             connectAndAskRoom('join room', roomID);
         }
 
@@ -57,7 +58,7 @@ export default function LandingPage() {
         if (username === "") {
             message.warning("Please enter a valid username");
         } else {
-            socket.credentials = { username };
+            socket.auth = { username: username, roomID: "" };
             connectAndAskRoom('create room', `${Date.now()}`);
         }
 

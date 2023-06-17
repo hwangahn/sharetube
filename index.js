@@ -15,27 +15,23 @@ const io = new Server(httpServer, {
 
 io.on("connection", (socket) => {   
 
-    socket.on('connect', () => {
-        console.log(`socket ${socket.id} connected`);
-    })
+    socket.username = socket.handshake.auth.username;
+    console.log(`socket ${socket.id} connected`);
 
-    socket.on('disconnect', () => {
+    socket.on('disconnecting', () => {
+        let iter = socket.rooms.keys();
+        iter.next();
+        let roomID = iter.next().value;
+        console.log(roomID);
+        io.to(roomID).emit('user left', socket.id);
         console.log(`socket ${socket.id} disconnected`);
-    })
+    });
 
     socket.on('join room', (roomID) => {
 
         let roomList = io.sockets.adapter.rooms;
-        let hasRoom = false;
 
         console.log(roomList);
-
-        for ([key, value] of roomList.entries()) {
-            if (key == roomID) {
-                hasRoom = true;
-                break;
-            }
-        }
 
         if (!roomList.has(roomID)) {
 
@@ -57,8 +53,20 @@ io.on("connection", (socket) => {
         socket.join(roomID);
         socket.emit('allow', roomID);
 
-        console.log(`${socket.username} created room ${roomID}`);
+        console.log(`socket ${socket.id} created room ${roomID}`);
 
+    });
+
+    socket.on('get users', async (roomID) => {
+
+        let sockets = await io.in(roomID).fetchSockets();
+        let users = sockets.map(Element => {
+            return {userID: Element.id, username: Element.username};
+        });
+
+        socket.emit('user list', users);
+        socket.to(roomID).emit('user list', users);
+        
     })
 
     socket.on('chat', (roomID, msg) => {
