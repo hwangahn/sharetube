@@ -19,12 +19,13 @@ io.on("connection", (socket) => {
     console.log(`socket ${socket.id} connected`);
 
     socket.on('disconnecting', () => {
+
         let iter = socket.rooms.keys();
         iter.next();
         let roomID = iter.next().value;
-        console.log(roomID);
         io.to(roomID).emit('user left', socket.id);
         console.log(`socket ${socket.id} disconnected`);
+
     });
 
     socket.on('join room', (roomID) => {
@@ -70,8 +71,12 @@ io.on("connection", (socket) => {
     })
 
     socket.on('chat', (roomID, msg) => {
-        console.log(roomID);
-        console.log(msg);
+
+        console.log(`socket ${socket.id} sent a message to room ${roomID}`);
+
+        socket.emit('new chat', socket.id, socket.username, msg);
+        socket.to(roomID).emit('new chat', socket.id, socket.username, msg);
+
     });
 
     socket.on('change timestamp', (roomID, timestamp) => {

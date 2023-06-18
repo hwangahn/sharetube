@@ -1,5 +1,5 @@
 import { Space, Button, Input, message } from "antd";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "./socket";
 
@@ -8,22 +8,24 @@ export default function LandingPage() {
     let [username, setUsername] = useState("");
     let [roomID, setRoomID] = useState("");
 
+    useEffect(() => {
+        socket.on('reject', (err) => {
+            message.error(err);
+            socket.disconnect();
+        });
+    
+    
+        socket.on('allow', (roomID) => {
+            socket.auth.roomID = roomID;
+            navigate(`/${roomID}`);
+        });
+
+        return () => {
+            socket.off();
+        }
+    }, []);
+
     let navigate = useNavigate();
-
-    socket.on('connect_error', (err) => {
-        message.error(err);
-        socket.disconnect();
-    });
-
-    socket.on('reject', (err) => {
-        message.error(err);
-        socket.disconnect();
-    });
-
-    socket.on('allow', (roomID) => {
-        socket.auth.roomID = roomID;
-        navigate(`/${roomID}`);
-    });
 
     let connectAndAskRoom = (type, roomID) => {
         console.log(socket.auth);
