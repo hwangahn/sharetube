@@ -23,7 +23,7 @@ io.on("connection", (socket) => {
         let iter = socket.rooms.keys();
         iter.next();
         let roomID = iter.next().value;
-        io.to(roomID).emit('user left', socket.id);
+        io.to(roomID).emit('user left');
         console.log(`socket ${socket.id} disconnected`);
 
     });
@@ -61,16 +61,37 @@ io.on("connection", (socket) => {
     socket.on('get users', async (roomID) => {
 
         let sockets = await io.in(roomID).fetchSockets();
-        let users = sockets.map(Element => {
-            return {userID: Element.id, username: Element.username};
-        });
 
-        socket.emit('user list', users);
-        socket.to(roomID).emit('user list', users);
+        console.log(`socket ${socket.id} requesting number of users in room`);
+        socket.emit('users', sockets.length);
+        socket.to(roomID).emit('users', sockets.length);
         
-    })
+    });
 
-    socket.on('chat', (roomID, msg) => {
+    socket.on('get chat', async (roomID) => {
+
+        
+        let sockets = await io.in(roomID).fetchSockets();
+        
+        if (sockets[0]) {
+            
+            let donor = sockets[0].id;
+            
+            console.log(`socket ${socket.id} requesting chat history from donor ${donor}`);
+            socket.to(donor).emit('get chat', socket.id);
+
+        }
+
+    });
+
+    socket.on('all chat', (allChat, requestID) => {
+
+        console.log(`socket ${requestID} receiving chat history in room`);
+        socket.to(requestID).emit('all chat', allChat);
+
+    });
+
+    socket.on('new chat', (roomID, msg) => {
 
         console.log(`socket ${socket.id} sent a message to room ${roomID}`);
 
