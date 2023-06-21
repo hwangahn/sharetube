@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Helmet } from "react-helmet";
 import socket from "./socket";
 import { Affix, Button, Input, Space } from "antd";
 import TextArea from "antd/es/input/TextArea";
@@ -48,7 +49,7 @@ function Chat({allChat, render}) {
         if (render == true) { 
             setReRender(render);
         }
-        bottom.current.scrollIntoView({behavior: "smooth"});
+        bottom.current.scrollIntoView({behavior: "smooth", block: "nearest"});
     })
 
     return (
@@ -150,7 +151,7 @@ function Miscellaneous() {
     }, []);
 
     return (
-        <div style={{width: "25%", height: "60%", float: "right", marginTop: "140px"}} id="miscellaneous">
+        <div style={{width: "25%", height: "60%", float: "right"}} id="miscellaneous">
             <Users userConnected={userConnected}
                     render={render} />
             <Chatbox allChat={allChat} 
@@ -199,9 +200,69 @@ function Searchbox({setResults, setRender}) {
 }
 
 function Player() {
+
+    let [currentTime, setCurrentTime] = useState(-1);
+    let [lastEvent, setLastEvent] = useState(-1);
+
+    useEffect(() => {
+        window.setCurrentTime = (value) => setCurrentTime(value);
+        window.setLastEvent = (value) => setLastEvent(value);
+    }, []);
+
+    useEffect(() => {
+        console.log(`last action ID: ${lastEvent}`);
+        console.log(`current time: ${currentTime}`);
+    }, [currentTime, lastEvent]);
+
     return (
-        <div id="player" style={{backgroundColor: "#1677FF", width: "960px", height: "540px", marginTop: "30px", marginBottom: "150px"}}>
+        <div id="video-player" style={{width: "fit-content", height: "fit-content", marginTop: "30px", marginBottom: "150px"}} >
             
+            <div id="player" style={{backgroundColor: "#1677FF", width: "960px", height: "540px"}}>
+
+            </div>
+            <Helmet>
+                <script type="text/javascript">
+
+                    {`
+                        let tag = null;
+                        if (!tag) {
+                            tag = document.createElement('script');
+                        }
+                
+                        tag.src = "https://www.youtube.com/iframe_api";
+                        var firstScriptTag = document.getElementsByTagName('script')[0];
+                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                        var player;
+                        window.onYouTubeIframeAPIReady = () => {
+                            player = new YT.Player('player', {
+                                height: '540',
+                                width: '960',
+                                videoId: 'OxgEcW6v0UU',
+                                playerVars: {
+                                    'playsinline': 1
+                                },
+                                events: {
+                                    'onReady': onPlayerReady,
+                                    'onStateChange': onPlayerStateChange
+                                }
+                            });
+                        }
+
+                        window.onPlayerReady = (event) => {
+                            event.target.playVideo();
+                        }
+                        
+                        window.onPlayerStateChange = (event) => {
+                            window.setLastEvent(event.data);
+                            window.setCurrentTime(event.target.getCurrentTime());
+                        }
+
+                        
+                    `}
+
+                </script>
+            </Helmet>
         </div>
     )
 }
@@ -225,7 +286,8 @@ function Result({results, render}) {
             <div ref={beginResult} style={{marginBottom: "50px"}}></div>
             {results.map(Element => {
                 return ( 
-                    <div id={`${Element.id.videoId}`} style={{display: "flex", flexDirection: "row", width: "960px", marginBottom: "50px"}}>
+                    <div id={`${Element.id.videoId}`} style={{display: "flex", flexDirection: "row", width: "960px", marginBottom: "50px",
+                                                            borderStyle: "solid", borderWidth: "1px", borderRadius: "10px"}}>
                         <div id="thumbnail" style={{width: "300px", height: "225px"}}>
                             <img src={`${Element.snippet.thumbnails.high.url}`} width="300" height="225" style={{borderRadius: "10px"}} />
                         </div>
@@ -259,11 +321,10 @@ function Media() {
 }
 
 export default function Home() {
-
     return (
         <div>
             <Media />
-            <Affix offsetTop={-100}>
+            <Affix offsetTop={140}>
                 <Miscellaneous />
             </Affix>
         </div>
