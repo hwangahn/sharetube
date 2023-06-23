@@ -100,9 +100,12 @@ io.on("connection", (socket) => {
 
     });
 
-    socket.on('change timestamp', (roomID, timestamp) => {
-        console.log(roomID);
-        console.log(timestamp);
+    socket.on('video event', (roomID, type, timestamp) => {
+
+        console.log(`socket ${socket.id} posted an event of type ${type} at timestamp ${timestamp} second`);
+
+        socket.to(roomID).emit('video event', type, timestamp);
+
     })
 
 });

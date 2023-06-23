@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import socket from "./socket";
-import { Affix, Button, Input, Space } from "antd";
+import { Affix, Button, Input, Space, Spin } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { UserOutlined } from "@ant-design/icons"
 
@@ -62,7 +62,7 @@ function Chat({allChat, render}) {
                             <div id="message-wrapper" style={{marginLeft: "10px", marginBottom: "10px", width: "340px"}}>
                                 <div id="message" style={{marginLeft: "auto", marginRight: "0", width: "fit-content", 
                                                             borderRadius: "20px", backgroundColor: "#1677FF", color: "#FFFFFF"}}>
-                                    <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", wordWrap: "break-word"}}>{Element.msg}</p>
+                                    <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
                                 </div>
                             </div>
                         </div>
@@ -72,9 +72,9 @@ function Chat({allChat, render}) {
                         <div style={{width: "350px"}}>
                             <p style={{marginLeft: "15px", marginRight: "auto", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
                             <div id="message-wrapper" style={{marginLeft: "10px", marginBottom: "10px", width: "340px"}}>
-                                <div id="message" style={{marginLeft: "0", marginRight: "auto", width: "fit-content", 
+                                <div id="message" style={{marginLeft: "0", marginRight: "auto", width: "fit-content",
                                                             borderRadius: "20px", backgroundColor: "#d9d7ce"}}>
-                                    <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", wordWrap: "break-word"}}>{Element.msg}</p>
+                                    <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
                                 </div>
                             </div>
                         </div>
@@ -201,68 +201,32 @@ function Searchbox({setResults, setRender}) {
 
 function Player() {
 
-    let [currentTime, setCurrentTime] = useState(-1);
-    let [lastEvent, setLastEvent] = useState(-1);
-
     useEffect(() => {
-        window.setCurrentTime = (value) => setCurrentTime(value);
-        window.setLastEvent = (value) => setLastEvent(value);
+
+        window.sendState = (state, timestamp) => {
+            socket.emit('video event', socket.auth.roomID, state, timestamp);
+        }
+
+        socket.on('video event', (type, timestamp) => {
+            if (window.getState() != type) {
+                if (type == 1) {
+                    window.play(timestamp);
+                } else if (type == 2) {
+                    window.pause();
+                }
+            }
+        });
+
+        return () => {
+            socket.off();
+        }
+
     }, []);
 
-    useEffect(() => {
-        console.log(`last action ID: ${lastEvent}`);
-        console.log(`current time: ${currentTime}`);
-    }, [currentTime, lastEvent]);
-
+    
     return (
         <div id="video-player" style={{width: "fit-content", height: "fit-content", marginTop: "30px", marginBottom: "150px"}} >
-            
-            <div id="player" style={{backgroundColor: "#1677FF", width: "960px", height: "540px"}}>
-
-            </div>
-            <Helmet>
-                <script type="text/javascript">
-
-                    {`
-                        let tag = null;
-                        if (!tag) {
-                            tag = document.createElement('script');
-                        }
-                
-                        tag.src = "https://www.youtube.com/iframe_api";
-                        var firstScriptTag = document.getElementsByTagName('script')[0];
-                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-                        var player;
-                        window.onYouTubeIframeAPIReady = () => {
-                            player = new YT.Player('player', {
-                                height: '540',
-                                width: '960',
-                                videoId: 'OxgEcW6v0UU',
-                                playerVars: {
-                                    'playsinline': 1
-                                },
-                                events: {
-                                    'onReady': onPlayerReady,
-                                    'onStateChange': onPlayerStateChange
-                                }
-                            });
-                        }
-
-                        window.onPlayerReady = (event) => {
-                            event.target.playVideo();
-                        }
-                        
-                        window.onPlayerStateChange = (event) => {
-                            window.setLastEvent(event.data);
-                            window.setCurrentTime(event.target.getCurrentTime());
-                        }
-
-                        
-                    `}
-
-                </script>
-            </Helmet>
+            <div id="player" style={{backgroundColor: "#1677FF", width: "960px", height: "540px"}} />
         </div>
     )
 }
@@ -327,6 +291,60 @@ export default function Home() {
             <Affix offsetTop={140}>
                 <Miscellaneous />
             </Affix>
+            <Helmet>
+                <script>
+                    {`
+                    tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                    window.onYouTubeIframeAPIReady = () => {
+                        player = new YT.Player('player', {
+                            height: '540',
+                            width: '960',
+                            playerVars: {
+                                'playsinline': 1, 
+                                'modestbranding': 1, 
+                                'fs': 0
+                            },
+                            events: {
+                                'onStateChange': onPlayerStateChange
+                            }
+                        });
+
+                        setTimeout(() => {
+                            player.loadVideoById("aOWh9JlV_gM", 0);
+                        }, 1000);
+
+                    }
+
+                    window.onPlayerStateChange = (event) => {
+                        if (event.data == 1 || event.data == 2) {
+                            if (event.data != state) {
+                                window.sendState(event.data, event.target.getCurrentTime());
+                            }
+                            state = event.data;
+                        }
+                    }
+
+                    window.playById = (videoId) => {
+                        player.loadVideoById(videoId, 0);
+                        state = 1;
+                    }
+
+                    window.pause = () => {
+                        player.pauseVideo();
+                    }
+
+                    window.play = (timestamp) => {
+                        player.seekTo(timestamp, true);
+                        player.playVideo();
+                    }
+
+                    `}
+                </script>
+            </Helmet>
         </div>
     );
 }

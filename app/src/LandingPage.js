@@ -9,6 +9,7 @@ export default function LandingPage() {
     let [roomID, setRoomID] = useState("");
 
     useEffect(() => {
+
         socket.on('reject', (err) => {
             message.error(err);
             socket.disconnect();
