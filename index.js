@@ -100,6 +100,15 @@ io.on("connection", (socket) => {
 
     });
 
+    socket.on('new video by id', (roomID, videoID) => {
+
+        console.log(`socket ${socket.id} requested to play video ${videoID}`);
+
+        socket.emit('play video by id', videoID);
+        socket.to(roomID).emit('play video by id', videoID);
+
+    })
+
     socket.on('video event', (roomID, type, timestamp) => {
 
         console.log(`socket ${socket.id} posted an event of type ${type} at timestamp ${timestamp} second`);

@@ -19,11 +19,15 @@ export default function App() {
 				<script>
 					{`
 					let tag;
-					let player;
-					let state = 1;
+					let player = null;
+					let serverResponse = false;
 
-					window.getState = () => {
-						return state;
+					window.setServerResponse = (value) => {
+						serverResponse = value;
+					}
+
+					window.getPlayer = () => {
+						return player;
 					}
 					`}
 				</script>
