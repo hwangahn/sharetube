@@ -14,7 +14,7 @@ const io = new Server(httpServer, {
     },
 });
 
-app.use("/keepalive", (req, res) => {
+app.get("/keepalive", (req, res) => {
     res.status(200).json({res: "kept alive"});
 })
 
