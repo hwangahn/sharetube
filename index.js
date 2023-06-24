@@ -1,4 +1,5 @@
 const express = require("express");
+require('dotenv').config();
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 
@@ -9,9 +10,13 @@ app.use(express.json());
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: process.env.CLIENT_URL,
     },
 });
+
+app.use("/keepalive", (req, res) => {
+    res.status(200).json({res: "kept alive"});
+})
 
 io.on("connection", (socket) => {   
 
@@ -120,6 +125,6 @@ io.on("connection", (socket) => {
 });
 
 
-httpServer.listen(4000, () => {
+httpServer.listen(process.env.PORT, () => {
     console.log("listening");
 });
