@@ -125,6 +125,6 @@ io.on("connection", (socket) => {
 });
 
 
-httpServer.listen(process.env.PORT, () => {
+httpServer.listen(process.env.PORT, '0.0.0.0', () => {
     console.log("listening");
 });
