@@ -33,11 +33,11 @@ function ChatInput({chatMessage, setChatMessage}) {
     }
 
     return (
-        <Space id="chat-box" size={5} align="start">
-            <TextArea id="chat-input" placeholder="Enter your message..." value={chatMessage} autoSize={{ minRows: 1, maxRows: 3}} style={{width: "375px"}}
-            onChange={(e) => {setChatMessage(e.target.value)}} onPressEnter={handleSendChat} />
-            <Button id="submit-chat" type="primary" style={{width: "75px"}} onClick={handleSendChat}>Send</Button>
-        </Space>
+        <div id="chat-box" style={{width: "75%"}}>
+                <TextArea id="chat-input" placeholder="Enter your message..." value={chatMessage} autoSize={{ minRows: 1, maxRows: 3}} style={{width: "100%", marginTop: "-10px"}}
+                onChange={(e) => {setChatMessage(e.target.value)}} onPressEnter={handleSendChat} />
+                <Button id="submit-chat" type="primary" style={{width: "100%", marginTop: "5px"}} onClick={handleSendChat}>Send</Button>
+        </div>
     )
 }
 
@@ -54,13 +54,13 @@ function Chat({allChat, render}) {
     })
 
     return (
-        <div style={{height: "450px", width: "375px", overflowY: "scroll", borderStyle: "solid", borderWidth: ".1px", borderRadius: "5px", paddingBottom: "10px"}} id="chat">
+        <div style={{height: "425px", width: "75%", overflowY: "scroll", borderStyle: "solid", borderWidth: ".1px", borderRadius: "5px", paddingBottom: "10px"}} id="chat">
             {allChat.map(Element => {
                 if (Element.userID == socket.id) {
                     return (
-                        <div style={{width: "350px"}}>
-                            <p style={{marginLeft: "auto", marginRight: "5px", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
-                            <div id="message-wrapper" style={{marginLeft: "10px", marginBottom: "10px", width: "340px"}}>
+                        <div style={{width: "100%"}}>
+                            <p style={{marginLeft: "auto", marginRight: "15px", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
+                            <div id="message-wrapper" style={{marginLeft: "3%", marginBottom: "10px", width: "95%"}}>
                                 <div id="message" style={{marginLeft: "auto", marginRight: "0", width: "fit-content", 
                                                             borderRadius: "20px", backgroundColor: "#1677FF", color: "#FFFFFF"}}>
                                     <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
@@ -70,9 +70,9 @@ function Chat({allChat, render}) {
                     )
                 } else {
                     return (
-                        <div style={{width: "350px"}}>
+                        <div style={{width: "100%"}}>
                             <p style={{marginLeft: "15px", marginRight: "auto", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
-                            <div id="message-wrapper" style={{marginLeft: "10px", marginBottom: "10px", width: "340px"}}>
+                            <div id="message-wrapper" style={{marginLeft: "3%", marginBottom: "10px", width: "95%"}}>
                                 <div id="message" style={{marginLeft: "0", marginRight: "auto", width: "fit-content",
                                                             borderRadius: "20px", backgroundColor: "#d9d7ce"}}>
                                     <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
@@ -89,7 +89,7 @@ function Chat({allChat, render}) {
 
 function Chatbox({allChat, chatMessage, setChatMessage, render}) {
     return (
-        <div id="chat-box">
+        <div id="chat-box" style={{width: "100%"}}>
             <Chat allChat={allChat} render={render} />
             <br/>
             <ChatInput chatMessage={chatMessage} setChatMessage={setChatMessage} />
@@ -102,30 +102,31 @@ function Miscellaneous() {
     let [userConnected, setUserConnected] = useState();
     let [allChat, setAllChat] = useState([]);
     let [chatMessage, setChatMessage] = useState("");
-    let [render, setRender] = useState(false);
+    let [render, setRender] = useState(false); // flag to re-render child component
 
     useEffect(() => {
 
+        // runs when first enter room 
         socket.emit('get users', socket.auth.roomID);
         socket.emit('get chat', socket.auth.roomID);
         
-        socket.on('users', (users) => {
+        socket.on('users push', (users) => { 
             setUserConnected(users);
             setRender(true);
         });
         
-        socket.on('user left', () => {
+        socket.on('users left push', () => {
             setUserConnected((userConnected) => {
                 return userConnected - 1;
             });
             setRender(true);
         });
         
-        socket.on('get chat', (requestID) => {
-            socket.emit('all chat', allChat, requestID);
+        socket.on('chat history request', (requestID) => {
+            socket.emit('chat history', allChat, requestID); // respond with chat history of room
         });
         
-        socket.on('all chat', (newAllChat) => {
+        socket.on('chat history push', (newAllChat) => {
             let dummy = allChat;
             if (dummy.length === 0) {
                 newAllChat.forEach(Element => {
@@ -137,7 +138,7 @@ function Miscellaneous() {
             setRender(true);
         });
     
-        socket.on('new chat', (userID, username, msg) => {
+        socket.on('new chat push', (userID, username, msg) => { // server push a new chat from an user in the room
             let newAllChat = allChat;
             newAllChat.push({userID: userID, username: username, msg: msg});
             setAllChat(newAllChat);
@@ -151,7 +152,7 @@ function Miscellaneous() {
     }, []);
 
     return (
-        <div style={{width: "25%", height: "60%", float: "right"}} id="miscellaneous">
+        <div style={{height: "60%", width: "25%", float: "right", marginRight: "3%"}} id="miscellaneous">
             <Users userConnected={userConnected}
                     render={render} />
             <Chatbox allChat={allChat} 
@@ -182,14 +183,13 @@ function Searchbox({setResults, setRender}) {
             })
             .then(data => {
                 setResults(data.items);
-                console.log(data);
             });
         }
     }
 
     return (
-        <div id="search" style={{}}>
-            <Space id="search-box" size={5} style={{display: "flex", width: "960px", justifyContent: "center", alignItems: "center"}} align="start">
+        <div id="search" >
+            <Space id="search-box" size={5} block={true} style={{display: "flex", width: "50%", justifyContent: "center", alignItems: "center", marginLeft: "25%"}} align="start">
                 <Input id="search-input" placeholder="Search..." value={searchKeyword} autoSize={{ minRows: 1, maxRows: 3}} style={{width: "375px"}}
                 onChange={e => setSearchKeyword(e.target.value)} onPressEnter={handleSearch}/>
                 <Button id="submit-search" type="primary" style={{width: "75px"}} onClick={handleSearch}>Search</Button>
@@ -202,17 +202,34 @@ function Player() {
 
     useEffect(() => {
 
-        window.sendEvent = (state, timestamp) => {
+        window.sendEvent = (state, timestamp) => { // when player's state change and is not server's request, call the function to emit event to server
             socket.emit('video event', socket.auth.roomID, state, timestamp);
         }
 
-        socket.on('play video by id', (videoId) => {
-            window.setServerResponse(true);
+        window.getCurrentVideo = () => {
+            socket.emit('get current video', socket.auth.roomID); // runs when first enter room 
+        }
+
+        socket.on('current video request', (requestID) => {
+            let currentVideoState = window.getVideoState(); 
+
+            if (currentVideoState) { // if playing queue is not empty
+                socket.emit('current video', currentVideoState, requestID);
+            } 
+        });
+
+        socket.on('current video push', (currentVideoState) => { 
+            window.setServerResponse(true); // indicates that this is a server request
+            window.playWithState(currentVideoState);
+        })
+
+        socket.on('play video by id', (videoId) => { // server request 
+            window.setServerResponse(true); // indicates that this is a server request
             window.playById(videoId);
         });
 
-        socket.on('video event', (type, timestamp) => {
-            window.setServerResponse(true);
+        socket.on('video event push', (type, timestamp) => { // server request video state change
+            window.setServerResponse(true); // indicates that this is a server request
             if (type == 1) {
                 window.play(timestamp);
             } else if (type == 2) {
@@ -227,8 +244,8 @@ function Player() {
     }, []);
 
     return (
-        <div id="video-player" style={{width: "fit-content", height: "fit-content", marginTop: "30px", marginBottom: "150px"}} >
-            <div id="player" style={{backgroundColor: "#1677FF", width: "960px", height: "540px"}} />
+        <div id="video-player" style={{width: "100%", height: "540px", marginTop: "30px", marginBottom: "150px"}} >
+            <div id="player" style={{backgroundColor: "#1677FF", width: "100%", height: "100%"}} />
         </div>
     )
 }
@@ -249,13 +266,11 @@ function Result({results, render, setResults}) {
         setTimeout(() => {
             beginResult.current.scrollIntoView({behavior: "smooth"})
         }, 250);
-
-
     });
 
     return (
-        <div id="results" style={{width: "960px", height: "fit-content",  marginTop: "30px", marginBottom: "50px"}}>
-            <div ref={beginResult} style={{marginBottom: "50px"}}></div>
+        <div id="results" style={{width: "100%", height: "fit-content", marginTop: "30px", marginBottom: "50px"}}>
+            <div ref={beginResult} style={{height: "100px"}}></div>
             {results.map(Element => {
 
                 let handleClick = () => {
@@ -265,22 +280,25 @@ function Result({results, render, setResults}) {
                     setResults([]);
                 }
 
-                console.log(Element.snippet.liveBroadcastContent == "live");
-
                 return ( 
-                    <div id={`${Element.id.videoId}`} style={{display: "flex", flexDirection: "row", width: "960px", marginBottom: "50px"}}>
-                        <div id="thumbnail" style={{width: "300px", height: "225px"}}>
-                            <img src={`${Element.snippet.thumbnails.high.url}`} width="300" height="225" style={{borderRadius: "10px"}} />
-                            {Element.snippet.liveBroadcastContent == "live" && 
-                            <div style={{height: "fit-content", width: "fit-content", backgroundColor: "#fc0905", borderRadius: "5px",
-                                        marginLeft: "auto", marginRight: "10px", marginTop: "-55px"}}>
-                                <p style={{paddingTop: "3px", paddingBottom: "3px", paddingLeft: "5px", paddingRight: "5px", color: "#FFFFFF"}}>LIVE</p>    
-                            </div>}
+                    <div id={`${Element.id.videoId}`} style={{width: "100%", height: "250px"}}>
+                        <div id="thumbnail" style={{width: "30%", height: "fit-content", float: "left"}}>
+                            <img src={`${Element.snippet.thumbnails.high.url}`} style={{width: "100%", height: "auto", borderRadius: "10px"}} />
                         </div>
-                        <div id="details" style={{width: "600px", height: "225px", marginLeft: "50px", marginTop: "10px"}}>
-                            <h3 style={{marginTop: "-5px"}}>{Element.snippet.title.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}</h3>
-                            <p>{Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}</p>
-                            <Button type="primary" onClick={handleClick}>Play</Button>
+                        <div id="details" style={{width: "65%", height: "fit-content", marginLeft: "5%", float: "right"}}>
+                            <h3 style={{maxHeight: "225px", marginTop: "-5px", overflowWrap: "break-word", wordBreak: "break-word"}}>
+                                {Element.snippet.title.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}
+                            </h3>
+                            <p style={{marginTop: "-5px", overflowWrap: "break-word", wordBreak: "break-word"}}>
+                                {Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}
+                            </p>
+                            <Space>
+                                <Button type="primary" onClick={handleClick}>Play</Button>
+                                {Element.snippet.liveBroadcastContent == "live" && 
+                                <div style={{height: "fit-content", width: "fit-content", backgroundColor: "#fc0905", borderRadius: "5px"}}>
+                                    <p style={{paddingTop: "6px", paddingBottom: "5px", paddingLeft: "6px", paddingRight: "6px", color: "#FFFFFF"}}>LIVE</p>    
+                                </div>}
+                            </Space>
                         </div>
                     </div>
                 )
@@ -302,8 +320,8 @@ function Media() {
     })
 
     return (
-        <div style={{display: "flex", height: "60%", float: "left", marginTop: "100px", marginLeft: "250px", 
-                    justifyContent: "center", alignItems: "center", flexDirection: "column"}} id="media">
+        <div style={{float: "left", width: "50%", marginTop: "100px", marginLeft: "10%", 
+                    justifyContent: "center", alignItems: "center"}} id="media">
             <Searchbox setResults={(value) => setResults(value)}
                         setRender={(value) => setRender(value)} />
             <Player />
@@ -352,6 +370,7 @@ export default function Home() {
 
                     window.onPlayerReady = (event) => {
                         window.setPlayer(event.data);
+                        window.getCurrentVideo();
                     }
 
                     window.onPlayerStateChange = (event) => {
@@ -361,7 +380,7 @@ export default function Home() {
                         if (event.data == 1 || event.data == 2) { // only consider play (1) and pause (2) events
                             if (!serverResponse) { // check to see if the event was made by server
                                 window.sendEvent(event.data, event.target.getCurrentTime()); 
-                                // if not (aka made by user), send the event to the server to sync with others in the room
+                                // if not (made by user), send the event to the server to sync with other clients in the room
                             }
                             serverResponse = false; // if it is made by server, consume the flag
                         }
@@ -371,6 +390,17 @@ export default function Home() {
                         player.loadVideoById(videoId, 0);
                     }
 
+                    window.playWithState = ({videoUrl, state, currentTime}) => { // gets called after server sent back the current video and playing state in room
+
+                        const params = videoUrl.split('=');
+                        const videoId = params[params.length - 1];
+
+                        player.loadVideoById(videoId, currentTime);
+                        if (state == 2) {
+                            player.pauseVideo();
+                        }
+                    }
+
                     window.pause = () => {
                         player.pauseVideo();
                     }
@@ -378,6 +408,14 @@ export default function Home() {
                     window.play = (timestamp) => {
                         player.seekTo(timestamp, true);
                         player.playVideo();
+                    }
+
+                    window.getVideoState = () => {
+                        if (player || player.getVideoUrl()) {
+                            return {videoUrl: player.getVideoUrl(), state: player.getPlayerState(), currentTime: player.getCurrentTime()}
+                        } else {
+                            return null;
+                        }
                     }
 
                     `}

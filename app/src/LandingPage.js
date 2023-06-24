@@ -10,13 +10,13 @@ export default function LandingPage() {
 
     useEffect(() => {
 
-        socket.on('reject', (err) => {
+        socket.on('reject', (err) => { // reject joining room with error
             message.error(err);
             socket.disconnect();
         });
     
     
-        socket.on('allow', (roomID) => {
+        socket.on('allow', (roomID) => { // allow creating/joining roomID 
             socket.auth.roomID = roomID;
             navigate(`/${roomID}`);
         });

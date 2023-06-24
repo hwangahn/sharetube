@@ -15,7 +15,8 @@ const io = new Server(httpServer, {
 });
 
 app.get("/keepalive", (req, res) => {
-    res.status(200).json({res: "kept alive"});
+    console.log("server kept alive");
+    res.status(200);
 })
 
 io.on("connection", (socket) => {   
@@ -28,11 +29,12 @@ io.on("connection", (socket) => {
         let iter = socket.rooms.keys();
         iter.next();
         let roomID = iter.next().value;
-        io.to(roomID).emit('user left');
+        io.to(roomID).emit('users left push');
         console.log(`socket ${socket.id} disconnected`);
 
     });
 
+    // room related listeners
     socket.on('join room', (roomID) => {
 
         let roomList = io.sockets.adapter.rooms;
@@ -63,36 +65,37 @@ io.on("connection", (socket) => {
 
     });
 
+    // user related listeners
     socket.on('get users', async (roomID) => {
 
         let sockets = await io.in(roomID).fetchSockets();
 
         console.log(`socket ${socket.id} requesting number of users in room`);
-        socket.emit('users', sockets.length);
-        socket.to(roomID).emit('users', sockets.length);
+        socket.emit('users push', sockets.length);
+        socket.to(roomID).emit('users push', sockets.length);
         
     });
 
+    // chat related listeners
     socket.on('get chat', async (roomID) => {
 
-        
         let sockets = await io.in(roomID).fetchSockets();
         
         if (sockets[0]) {
             
             let donor = sockets[0].id;
             
-            console.log(`socket ${socket.id} requesting chat history from donor ${donor}`);
-            socket.to(donor).emit('get chat', socket.id);
+            console.log(`socket ${socket.id} requesting chat history in room ${roomID} from donor ${donor}`);
+            socket.to(donor).emit('chat history request', socket.id);
 
         }
 
     });
 
-    socket.on('all chat', (allChat, requestID) => {
+    socket.on('chat history', (allChat, requestID) => {
 
         console.log(`socket ${requestID} receiving chat history in room`);
-        socket.to(requestID).emit('all chat', allChat);
+        socket.to(requestID).emit('chat history push', allChat);
 
     });
 
@@ -100,27 +103,52 @@ io.on("connection", (socket) => {
 
         console.log(`socket ${socket.id} sent a message to room ${roomID}`);
 
-        socket.emit('new chat', socket.id, socket.username, msg);
-        socket.to(roomID).emit('new chat', socket.id, socket.username, msg);
+        socket.emit('new chat push', socket.id, socket.username, msg);
+        socket.to(roomID).emit('new chat push', socket.id, socket.username, msg);
 
     });
 
+    // video related listeners
+    socket.on('get current video', async (roomID) => {
+
+        let sockets = await io.in(roomID).fetchSockets();
+        
+        if (sockets[0]) {
+            
+            let donor = sockets[0].id;
+            
+            console.log(`socket ${socket.id} requesting video playing in room ${roomID} from donor ${donor}`);
+            socket.to(donor).emit('current video request', socket.id);
+
+        }
+
+    });
+
+    socket.on('current video', (currentVideoState, requestID) => {
+
+        console.log(`socket ${requestID} receiving current video state in room`);
+        console.log(`current video url is ${currentVideoState.videoUrl}`)
+
+        socket.to(requestID).emit('current video push', currentVideoState);
+
+    })
+
     socket.on('new video by id', (roomID, videoID) => {
 
-        console.log(`socket ${socket.id} requested to play video ${videoID}`);
+        console.log(`socket ${socket.id} wants to play video ${videoID}`);
 
         socket.emit('play video by id', videoID);
         socket.to(roomID).emit('play video by id', videoID);
 
-    })
+    });
 
     socket.on('video event', (roomID, type, timestamp) => {
 
-        console.log(`socket ${socket.id} posted an event of type ${type} at timestamp ${timestamp} second`);
+        console.log(`socket ${socket.id} made an event of type ${type} at timestamp ${timestamp} second`);
 
-        socket.to(roomID).emit('video event', type, timestamp);
+        socket.to(roomID).emit('video event push', type, timestamp);
 
-    })
+    });
 
 });
 

@@ -29,6 +29,12 @@ export default function App() {
 					window.getPlayer = () => {
 						return player;
 					}
+
+					setInterval(() => {
+						fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
+							method: 'get'
+						})
+					}, 600000);
 					`}
 				</script>
 			</Helmet>
