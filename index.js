@@ -16,6 +16,9 @@ const io = new Server(httpServer, {
 
 app.get("/keepalive", (req, res) => {
     console.log("server kept alive");
+});
+
+app.get("/health", (req, res) => {
     res.status(200);
 })
 
@@ -24,12 +27,16 @@ io.on("connection", (socket) => {
     socket.username = socket.handshake.auth.username;
     console.log(`socket ${socket.id} connected`);
 
-    socket.on('disconnecting', () => {
+    socket.on('disconnecting', async () => {
 
         let iter = socket.rooms.keys();
         iter.next();
         let roomID = iter.next().value;
-        io.to(roomID).emit('users left push');
+
+        let sockets = await io.in(roomID).fetchSockets();
+
+        io.to(roomID).emit('users push', sockets.length - 1);
+
         console.log(`socket ${socket.id} disconnected`);
 
     });

@@ -34,7 +34,7 @@ export default function App() {
 						fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
 							method: 'get'
 						})
-					}, 600000);
+					}, 300000);
 					`}
 				</script>
 			</Helmet>

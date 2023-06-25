@@ -54,7 +54,8 @@ function Chat({allChat, render}) {
     })
 
     return (
-        <div style={{height: "425px", width: "75%", overflowY: "scroll", borderStyle: "solid", borderWidth: ".1px", borderRadius: "5px", paddingBottom: "10px"}} id="chat">
+        <div style={{height: "425px", width: "75%", overflowY: "scroll", 
+                    borderStyle: "solid", borderWidth: ".1px", borderRadius: "5px", borderColor: "#d9dddc", paddingBottom: "10px"}} id="chat">
             {allChat.map(Element => {
                 if (Element.userID == socket.id) {
                     return (
@@ -115,13 +116,6 @@ function Miscellaneous() {
             setRender(true);
         });
         
-        socket.on('users left push', () => {
-            setUserConnected((userConnected) => {
-                return userConnected - 1;
-            });
-            setRender(true);
-        });
-        
         socket.on('chat history request', (requestID) => {
             socket.emit('chat history', allChat, requestID); // respond with chat history of room
         });
@@ -131,7 +125,6 @@ function Miscellaneous() {
             if (dummy.length === 0) {
                 newAllChat.forEach(Element => {
                     dummy.push(Element);
-                    console.log(dummy);
                 });
             }
             setAllChat(dummy);
@@ -171,7 +164,6 @@ function Searchbox({setResults, setRender}) {
     let handleSearch = () => {
         if (searchKeyword.trimStart() != "") {
             setRender(true);
-            console.log(searchKeyword.trimStart().replaceAll(' ', '+'));
             fetch(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=${searchKeyword.trimStart().replaceAll(' ', '+')}&key=${process.env.REACT_APP_YT_API_KEY}&type=video`, {
                 method: 'get',
                 headers: {
@@ -293,11 +285,12 @@ function Result({results, render, setResults}) {
                                 {Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}
                             </p>
                             <Space>
-                                <Button type="primary" onClick={handleClick}>Play</Button>
+                                {Element.snippet.liveBroadcastContent != "live" && 
+                                    <Button type="primary" onClick={handleClick} style={{width: "60px"}}>Play</Button>
+                                }
                                 {Element.snippet.liveBroadcastContent == "live" && 
-                                <div style={{height: "fit-content", width: "fit-content", backgroundColor: "#fc0905", borderRadius: "5px"}}>
-                                    <p style={{paddingTop: "6px", paddingBottom: "5px", paddingLeft: "6px", paddingRight: "6px", color: "#FFFFFF"}}>LIVE</p>    
-                                </div>}
+                                    <Button type="primary" danger={true} onClick={handleClick} style={{width: "60px"}}>Live</Button>
+                                }
                             </Space>
                         </div>
                     </div>
@@ -375,8 +368,6 @@ export default function Home() {
 
                     window.onPlayerStateChange = (event) => {
 
-                        console.log(event.data);
-
                         if (event.data == 1 || event.data == 2) { // only consider play (1) and pause (2) events
                             if (!serverResponse) { // check to see if the event was made by server
                                 window.sendEvent(event.data, event.target.getCurrentTime()); 
@@ -411,10 +402,10 @@ export default function Home() {
                     }
 
                     window.getVideoState = () => {
-                        if (player || player.getVideoUrl()) {
-                            return {videoUrl: player.getVideoUrl(), state: player.getPlayerState(), currentTime: player.getCurrentTime()}
-                        } else {
+                        if (!player || !player.getVideoUrl()) {
                             return null;
+                        } else {
+                            return {videoUrl: player.getVideoUrl(), state: player.getPlayerState(), currentTime: player.getCurrentTime()}
                         }
                     }
 
