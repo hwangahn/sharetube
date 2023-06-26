@@ -19,7 +19,7 @@ app.get("/keepalive", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-    res.status(200);
+    res.status(200).json({msg: "OK"});
 })
 
 io.on("connection", (socket) => {   
