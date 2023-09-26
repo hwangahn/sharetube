@@ -1,13 +1,13 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useParams } from "react-router-dom";
 import socket from "./socket";
 import { Affix, Button, Input, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { UserOutlined, TeamOutlined, CopyOutlined, SearchOutlined } from "@ant-design/icons";
-
-const SearchContext = createContext(null);
-const VideoContext = createContext(null);
+import Message from "./components/messege";
+import Player from "./components/player";
+import { SearchContext, VideoContext } from "./utils/context";
 
 function Searchbox() {
 
@@ -85,34 +85,6 @@ function Info() {
     )
 }
 
-function Message({Element}) {
-    if (Element.userID == socket.id) {
-        return (
-            <div style={{width: "100%"}}>
-                <p style={{marginLeft: "auto", marginRight: "20px", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
-                <div id="message-wrapper" style={{marginLeft: "2%", marginBottom: "10px", width: "95%"}}>
-                    <div id="message" style={{marginLeft: "auto", marginRight: "0", width: "fit-content", 
-                                                borderRadius: "20px", backgroundColor: "#1677FF", color: "#FFFFFF"}}>
-                        <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
-                    </div>
-                </div>
-            </div>
-        )
-    } else {
-        return (
-            <div style={{width: "100%"}}>
-                <p style={{marginLeft: "15px", marginRight: "auto", marginBottom: "5px", width: "fit-content"}}>{Element.username}</p>
-                <div id="message-wrapper" style={{marginLeft: "2%", marginBottom: "10px", width: "95%"}}>
-                    <div id="message" style={{marginLeft: "0", marginRight: "auto", width: "fit-content",
-                                                borderRadius: "20px", backgroundColor: "#d9d7ce"}}>
-                        <p style={{padding: "10px", marginTop: "-3px", marginBottom: "-3px", overflowWrap: "break-word", wordBreak: "break-word"}}>{Element.msg}</p>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-}
-
 function Chatbox() {
 
     let [chatMessage, setChatMessage] = useState("");
@@ -155,7 +127,7 @@ function Chatbox() {
 
     useEffect(() => {
         lastMessage.current.scrollIntoView({behavior: "smooth", block: "nearest"});
-    });
+    }, []);
 
     let handleSendChat = (e) => {
         e.preventDefault();
@@ -192,84 +164,6 @@ function RoomMiscellany() {
             <Info />
             <Chatbox />
         </Affix>
-    )
-}
-
-function Video() {
-
-    let { videoDetails, setVideoDetails } = useContext(VideoContext);
-
-    let beginPlayer = useRef(null);
-
-    useEffect(() => {
-        beginPlayer.current.scrollIntoView({behavior: "smooth"})
-
-        window.sendEvent = (state, timestamp) => { // when player's state change and is not server's request, call the function to emit event to server
-            socket.emit('video event', socket.auth.roomID, state, timestamp);
-        }
-
-        window.getCurrentVideo = () => {
-            socket.emit('get current video', socket.auth.roomID); // runs when first enter room 
-        }
-
-        socket.on('current video request', (requestID) => {
-            let currentVideoState = window.getVideoState();
-
-            if (currentVideoState.state != 5) {
-
-                // insert video info
-                currentVideoState.videoId = videoDetails.videoId; 
-                currentVideoState.videoTitle = videoDetails.videoTitle;
-                currentVideoState.videoChannel = videoDetails.videoChannel;
-
-                socket.emit('current video', currentVideoState, requestID);
-            }
-        });
-
-        socket.on('current video push', (currentVideoState) => { 
-            window.setServerResponse(true); // indicates that this is a server request
-            setVideoDetails({videoId: currentVideoState.videoId,
-                            videoTitle: currentVideoState.videoTitle,
-                            videoChannel: currentVideoState.videoChannel}); // update video details
-            window.playById(currentVideoState.videoId, currentVideoState.state, currentVideoState.currentTime);
-        })
-
-        socket.on('play video by id', (videoDetails) => { // server request 
-            window.setServerResponse(true); // indicates that this is a server request
-            setVideoDetails(videoDetails); // update video details
-            window.playById(videoDetails.videoId);
-        });
-
-        socket.on('video event push', (type, timestamp) => { // server request video state change
-            window.setServerResponse(true); // indicates that this is a server request
-            if (type == 1) {
-                window.play(timestamp);
-            } else if (type == 2) {
-                window.pause();
-            }
-        });
-
-        return () => {
-            socket.off('current video request');
-            socket.off('current video push');
-            socket.off('play video by id');
-            socket.off('video event push');
-        }
-    }, [videoDetails]);
-
-    return (
-        <div id="video" style={{float: "left", width: "65%", height: "100%", marginLeft: "3%"}}>
-            <div ref={beginPlayer}></div>
-            <div id="player" style={{width: "100%", height: "80%", paddingTop: "10px"}} />
-            <div id="video-details" style={{width: "100%", height: "20%", paddingTop: "10px"}}>
-                <h3 style={{overflowWrap: "break-word", wordBreak: "break-word"}}>
-                    {videoDetails && videoDetails.videoTitle}
-                </h3>
-                <p>
-                    {videoDetails && videoDetails.videoChannel}
-                </p>
-            </div>
-        </div>
     )
 }
 
@@ -361,79 +255,8 @@ export default function Home() {
             <VideoContext.Provider value={{videoDetails, setVideoDetails}}> 
                 <Navbar />
                 <RoomMiscellany />
-                <Video />
+                <Player />
                 <Result />
-                <Helmet>
-                    <script>
-                        {`
-
-                        tag = document.createElement('script');
-                        tag.src = "https://www.youtube.com/iframe_api";
-                        var firstScriptTag = document.getElementsByTagName('script')[0];
-                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-                        window.onYouTubeIframeAPIReady = () => {
-                            player = new YT.Player('player', {
-                                height: '540',
-                                width: '960',
-                                host: "https://www.youtube-nocookie.com",
-                                playerVars: {
-                                    'playsinline': 1, 
-                                    'modestbranding': 1, 
-                                    'fs': 0
-                                },
-                                events: {
-                                    'onReady': onPlayerReady,
-                                    'onStateChange': onPlayerStateChange
-                                }
-                            });
-                        }
-
-                        // standard youtube iframe api initialization code
-
-                        window.onPlayerReady = (event) => {
-                            window.getCurrentVideo();
-                        }
-
-                        window.onPlayerStateChange = (event) => {
-
-                            if (event.data == 1 || event.data == 2) { // only consider play (1) and pause (2) events
-                                if (!serverResponse) { // check to see if the event was made by server
-                                    window.sendEvent(event.data, event.target.getCurrentTime()); 
-                                    // if not (made by user), send the event to the server to sync with other clients in the room
-                                }
-                                serverResponse = false; // if it is made by server, consume the flag
-                            }
-                        }
-
-                        window.playById = (videoId, state = 1, currentTime = 0) => {
-                            player.loadVideoById(videoId, currentTime);
-                            if (state == 2) {
-                                player.pauseVideo();
-                                serverResponse = false;
-                            }
-                        }
-
-                        window.pause = () => {
-                            player.pauseVideo();
-                        }
-
-                        window.play = (timestamp) => {
-                            player.seekTo(timestamp, true);
-                            player.playVideo();
-                        }
-
-                        window.getVideoState = () => {
-                            if (!player || !player.getVideoUrl()) {
-                                return null;
-                            } else {
-                                return {state: player.getPlayerState(), currentTime: player.getCurrentTime()}
-                            }
-                        }
-
-                        `}
-                    </script>
-                </Helmet>
             </VideoContext.Provider>
         </SearchContext.Provider>
     );
