@@ -36,7 +36,7 @@ app.get("/health", (req, res) => {
 });
 
 io.use((socket, next) => {
-    socket.username = socket.handshake.auth.username;
+    socket.data.username = socket.handshake.auth.username;
     console.log(`socket ${socket.id} connected`);
 
     next()

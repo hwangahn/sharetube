@@ -31,8 +31,8 @@ module.exports = (io) => {
 
         console.log(`socket ${socket.id} sent a message to room ${roomID}`);
 
-        socket.emit('new chat push', socket.id, socket.username, msg);
-        socket.to(roomID).emit('new chat push', socket.id, socket.username, msg);
+        socket.emit('new chat push', socket.id, socket.data.username, msg);
+        socket.to(roomID).emit('new chat push', socket.id, socket.data.username, msg);
 
     }
 
