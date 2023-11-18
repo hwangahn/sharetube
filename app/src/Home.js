@@ -1,13 +1,13 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { Helmet } from "react-helmet";
 import { useParams } from "react-router-dom";
 import socket from "./socket";
 import { Affix, Button, Input, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import { SearchContext, VideoContext } from "./utils/context";
 import { UserOutlined, TeamOutlined, CopyOutlined, SearchOutlined } from "@ant-design/icons";
 import Message from "./components/messege";
 import Player from "./components/player";
-import { SearchContext, VideoContext } from "./utils/context";
+import VideoCard from "./components/videoCard";
 
 function Searchbox() {
 
@@ -42,7 +42,7 @@ function Navbar() {
     )
 }
 
-function Info() {
+function RoomInfo() {
 
     let [userConnected, setUserConnected] = useState();
     let [render, setRender] = useState(false);
@@ -158,52 +158,6 @@ function Chatbox() {
     )
 }
 
-function RoomMiscellany() {
-    return (
-        <Affix id="room-miscellany" offsetTop={68} style={{height: "80%", width: "25%", float: "right", marginRight: "3%"}}>
-            <Info />
-            <Chatbox />
-        </Affix>
-    )
-}
-
-function VideoCard({Element}) {
-
-    let { setVideoDetails } = useContext(VideoContext);
-
-    let handleClick = () => {
-        setVideoDetails({videoId: Element.id.videoId, 
-                        videoTitle: Element.snippet.title.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&"), 
-                        videoChannel: Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}); // update video details
-        socket.emit('new video by id', socket.auth.roomID, 
-            {videoId: Element.id.videoId, 
-            videoTitle: Element.snippet.title.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&"), 
-            videoChannel: Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}); // request playing video of following details
-    }
-
-    return ( 
-        <div id={`${Element.id.videoId}`} style={{width: "100%", height: "300px"}}>
-            <div id="thumbnail" style={{width: "30%", height: "fit-content", float: "left"}}>
-                <img src={`${Element.snippet.thumbnails.high.url}`} style={{width: "100%", height: "auto", borderRadius: "10px"}} />
-            </div>
-            <div id="details" style={{width: "65%", height: "fit-content", marginLeft: "5%", marginTop: "10px", float: "right"}}>
-                <h4 style={{marginTop: "-5px", overflowWrap: "break-word", wordBreak: "break-word"}}>
-                    {Element.snippet.title.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}
-                </h4>
-                <p style={{marginTop: "-5px", overflowWrap: "break-word", wordBreak: "break-word"}}>
-                    {Element.snippet.channelTitle.replaceAll("&quot;", `"`).replaceAll("&#39;", "'").replaceAll("&amp;", "&")}
-                </p>
-                {Element.snippet.liveBroadcastContent != "live" && 
-                    <Button type="primary" onClick={handleClick} style={{width: "60px"}}>Play</Button>
-                }
-                {Element.snippet.liveBroadcastContent == "live" && 
-                    <Button type="primary" danger={true} onClick={handleClick} style={{width: "60px"}}>Live</Button>
-                }
-            </div>
-        </div>
-    )
-}
-
 function Result() {
 
     let [results, setResults] = useState([]);
@@ -236,7 +190,7 @@ function Result() {
     }, [searchKeyword]);
 
     return (
-        <div id="results" style={{display: "float", float: "left", width: "65%", height: "fit-content", marginTop: "30px", marginBottom: "50px", marginLeft: "3%"}}>
+        <div id="results" style={{height: "fit-content", marginTop: "30px", marginBottom: "50px", marginLeft: "3%"}}>
             <div ref={beginResult} style={{height: "100px"}}></div>
             {results.map(Element => {
                 return <VideoCard Element={Element} />
@@ -254,9 +208,14 @@ export default function Home() {
         <SearchContext.Provider value={{searchKeyword, setSearchKeyword}}>
             <VideoContext.Provider value={{videoDetails, setVideoDetails}}> 
                 <Navbar />
-                <RoomMiscellany />
-                <Player />
-                <Result />
+                <Affix id="room-miscellany" offsetTop={68} style={{height: "80%", width: "25%", float: "right", marginRight: "3%"}}>
+                    <RoomInfo />
+                    <Chatbox />
+                </Affix>
+                <div id="results" style={{display: "float", float: "left", width: "65%", height: "100%", marginLeft: "3%"}}>
+                    <Player />
+                    <Result />
+                </div>
             </VideoContext.Provider>
         </SearchContext.Provider>
     );

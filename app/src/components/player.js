@@ -67,22 +67,21 @@ export default function Player() {
 
     return (
         <>
-            <div id="video" style={{float: "left", width: "65%", height: "100%", marginLeft: "3%"}}>
+            <div id="video" style={{height: "100%", marginLeft: "3%"}}>
                 <div ref={beginPlayer}></div>
                 <div id="player" style={{width: "100%", height: "80%", paddingTop: "10px"}} />
                 <div id="video-details" style={{width: "100%", height: "20%", paddingTop: "10px"}}>
                     <h3 style={{overflowWrap: "break-word", wordBreak: "break-word"}}>
-                        {videoDetails && videoDetails.videoTitle}
+                        {videoDetails?.videoTitle}
                     </h3>
                     <p>
-                        {videoDetails && videoDetails.videoChannel}
+                        {videoDetails?.videoChannel}
                     </p>
                 </div>
             </div>
             <Helmet>
                 <script>
                     {`
-
                     let tag;
                     let player = null;
                     let serverResponse = false;
@@ -90,12 +89,6 @@ export default function Player() {
                     window.setServerResponse = (value) => {
                         serverResponse = value;
                     }
-
-                    setInterval(() => {
-                        fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
-                            method: 'get'
-                        })
-                    }, 300000);
 
                     tag = document.createElement('script');
                     tag.src = "https://www.youtube.com/iframe_api";

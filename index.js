@@ -12,6 +12,13 @@ const io = new Server(httpServer, {
     cors: {
         origin: process.env.CLIENT_URL,
     },
+    connectionStateRecovery: {
+        // the backup duration of the sessions and the packets
+        maxDisconnectionDuration: 2 * 60 * 1000,
+        // whether to skip middlewares upon successful recovery
+        skipMiddlewares: true,
+    }
+    
 });
 
 let { handleGetChat, handleChatHistory, handleNewChat } = require('./eventHandlers/chatHandler')(io);

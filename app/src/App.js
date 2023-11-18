@@ -15,6 +15,17 @@ export default function App() {
 					</Route>
 				</Routes>
 			</BrowserRouter>
+			<Helmet>
+				<script>
+					{`
+                    setInterval(() => {
+                        fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
+                            method: 'get'
+                        })
+                    }, 300000);
+					`}
+				</script>
+			</Helmet>
 		</>
 	)
 }
