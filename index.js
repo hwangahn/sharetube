@@ -17,8 +17,9 @@ const io = new Server(httpServer, {
         maxDisconnectionDuration: 2 * 60 * 1000,
         // whether to skip middlewares upon successful recovery
         skipMiddlewares: true,
-    }
-    
+    },
+    pingInterval: 1000,
+    pingTimeout: 1000,
 });
 
 let { handleGetChat, handleChatHistory, handleNewChat } = require('./eventHandlers/chatHandler')(io);
