@@ -18,23 +18,11 @@ export default function App() {
 			<Helmet>
 				<script>
 					{`
-					let tag;
-					let player = null;
-					let serverResponse = false;
-
-					window.setServerResponse = (value) => {
-						serverResponse = value;
-					}
-
-					window.getPlayer = () => {
-						return player;
-					}
-
-					setInterval(() => {
-						fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
-							method: 'get'
-						})
-					}, 300000);
+                    setInterval(() => {
+                        fetch('${process.env.REACT_APP_SERVER_URL}/keepalive', {
+                            method: 'get'
+                        })
+                    }, 300000);
 					`}
 				</script>
 			</Helmet>

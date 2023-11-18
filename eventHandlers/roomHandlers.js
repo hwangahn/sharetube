@@ -1,6 +1,6 @@
 module.exports = (io) => {
 
-    let handleDisconnect = async function () {
+    let handleDisconnect = async function (reasons) {
 
         let socket = this;
 
@@ -12,7 +12,7 @@ module.exports = (io) => {
 
         io.to(roomID).emit('users push', sockets.length - 1);
 
-        console.log(`socket ${socket.id} disconnected`);
+        console.log(`socket ${socket.id} disconnected because ${reasons}`);
 
     }
 
